@@ -81,7 +81,7 @@ def main():
                 json_data = get_json_data()
                 print(json_data)
            
-            img = cv2.imread('test.bmp', 1)
+            img = cv2.imread('front.bmp', 1)
             
             start = time.time()
             if (np.array_equal(img, prev)):
@@ -90,7 +90,7 @@ def main():
                 #print("equal")
                 pass
             else:
-                img2 = cv2.imread('tost.bmp', 0)
+                img2 = cv2.imread('left.bmp', 0)
                 cv2.imshow('window', img) # cv2.resize(img, (900, 700)))
                 cv2.imshow('window2', img2)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -100,13 +100,10 @@ def main():
                 json_data = get_json_data()
                 print(json_data)
                 #horizontal = np.hstack((img2, img))
-               
-                #cv2.imshow('otra', img2)
                                    
                 prev = img
             
         except:
-            
             pass            
                                         
         keys = key_check()
