@@ -79,16 +79,14 @@ public class ScriptTutorial : Script
         bitmap2 = new Bitmap(width2, height2);
         g = Graphics.FromImage(bitmap);
         g2 = Graphics.FromImage(bitmap2);
-
+        
+        //Gets GTA directory to read path.txt which is the json file that will interact with the python file.
         string ruta = Directory.GetCurrentDirectory();
         string combined = Path.Combine(ruta, "scripts");
 
         string texto = Path.Combine(combined, Path.GetFileName("path.txt"));
 
         path = System.IO.File.ReadAllText(@texto);
-        string image1 = Path.Combine(texto, Path.GetFileName("front.bmp"));
-        string image2 = Path.Combine(texto, Path.GetFileName("left.bmp"));
-
     }
 
     void OnTick(object sender, EventArgs e)
@@ -128,13 +126,14 @@ public class ScriptTutorial : Script
                 //to capture(at least in my PC). Just try changging the accepted imageInterval to see what is the best for you.
                 if (camAngle == 0 && (imageInterval == 2 || imageInterval == 4 || imageInterval == 5))
                 {
+                    //The path below is tha path that you want the screen capture to be saved.
                     g.CopyFromScreen(p1, Point.Empty, size);
-                    bitmap.Save(@"c:\Users\yo\Desktop\SelfDriving\joystickrecolDataTraining\test.bmp", ImageFormat.Bmp);
+                    bitmap.Save(@"c:\Users\yo\Desktop\SelfDriving\joystickrecolDataTraining\front.bmp", ImageFormat.Bmp);
                 }
                 else if (camAngle == 60 && (imageInterval == 2 || imageInterval == 4))
                 {
                     g2.CopyFromScreen(p2, Point.Empty, size2);
-                    bitmap2.Save(@"c:\Users\yo\Desktop\SelfDriving\joystickrecolDataTraining\tost.bmp", ImageFormat.Bmp);
+                    bitmap2.Save(@"c:\Users\yo\Desktop\SelfDriving\joystickrecolDataTraining\left.bmp", ImageFormat.Bmp);
                 }
                 imageInterval += 1;
 
