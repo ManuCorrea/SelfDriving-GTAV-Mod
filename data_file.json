@@ -1,0 +1,19 @@
+{
+  "car": {
+    "incar": true,
+    "speed": 0.008099875,
+    "coords": "X:1313,492 Y:-2280,068 Z:51,58352",
+    "direction": 2,
+    "on_road": false,
+    "path": "pos no",
+    "distance": "0",
+    "coordsX": -1440.64807,
+    "coordsY": -411.0776,
+    "coordsZ": 35.52598,
+    "heading": 90.3499756,
+    "2cam": false,
+    "destinationX": 0.0,
+    "destinationY": 0.0,
+    "destinationZ": 0.0
+  }
+}
