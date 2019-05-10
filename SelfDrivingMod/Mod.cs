@@ -1,4 +1,4 @@
-﻿using GTA;
+using GTA;
 using System;
 using System.Windows.Forms;
 using GTA.Math;
