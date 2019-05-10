@@ -1,4 +1,4 @@
-﻿using GTA;
+using GTA;
 using System;
 using System.Windows.Forms;
 using GTA.Math;
@@ -48,7 +48,7 @@ public class ScriptTutorial : Script
 
     //Interval
     byte imageInterval = 0;
-    readonly byte endInterval = 5;
+    readonly byte endInterval = 3;
 
     //Top left point in the rectangle that take the screenshot
     Point p1 = new Point(0, 150);
@@ -56,6 +56,9 @@ public class ScriptTutorial : Script
 
     bool simulate_cameras = false;
     string path;
+    string image_front_path;
+    string image_left_path;
+    string json_path;
 
 
     public ScriptTutorial()
@@ -77,16 +80,19 @@ public class ScriptTutorial : Script
         size2 = bounds2.Size;
         bitmap = new Bitmap(width, height);
         bitmap2 = new Bitmap(width2, height2);
-        g = Graphics.FromImage(bitmap);
-        g2 = Graphics.FromImage(bitmap2);
-        
-        //Gets GTA directory to read path.txt which is the json file that will interact with the python file.
-        string ruta = Directory.GetCurrentDirectory();
-        string combined = Path.Combine(ruta, "scripts");
+        g = Graphics.FromImage(bitmap); //Screenshot front car
+        g2 = Graphics.FromImage(bitmap2); //Screenshot left car
+
+        string directory = Directory.GetCurrentDirectory();
+        string combined = Path.Combine(directory, "scripts");
 
         string texto = Path.Combine(combined, Path.GetFileName("path.txt"));
 
         path = System.IO.File.ReadAllText(@texto);
+        image_front_path = Path.Combine(path, Path.GetFileName("front.jpg"));
+        image_left_path = Path.Combine(path, Path.GetFileName("left.jpg"));
+        json_path = Path.Combine(path, Path.GetFileName("data_file.json"));
+
     }
 
     void OnTick(object sender, EventArgs e)
@@ -124,20 +130,22 @@ public class ScriptTutorial : Script
             {
                 //I know those if statements looks inefficient, if I make them "properly" it goes fast enough to capture the camAngle they aren't suppose
                 //to capture(at least in my PC). Just try changging the accepted imageInterval to see what is the best for you.
-                if (camAngle == 0 && (imageInterval == 2 || imageInterval == 4 || imageInterval == 5))
+                if (!(imageInterval == 0 || imageInterval == 1 || imageInterval == endInterval))
                 {
-                    //The path below is tha path that you want the screen capture to be saved.
-                    g.CopyFromScreen(p1, Point.Empty, size);
-                    bitmap.Save(@"c:\Users\yo\Desktop\SelfDriving\joystickrecolDataTraining\front.bmp", ImageFormat.Bmp);
-                }
-                else if (camAngle == 60 && (imageInterval == 2 || imageInterval == 4))
-                {
-                    g2.CopyFromScreen(p2, Point.Empty, size2);
-                    bitmap2.Save(@"c:\Users\yo\Desktop\SelfDriving\joystickrecolDataTraining\left.bmp", ImageFormat.Bmp);
+                    if (camAngle == 0)
+                    {
+                        g.CopyFromScreen(p1, Point.Empty, size);
+                        bitmap.Save(image_front_path, ImageFormat.Jpeg);
+                    }
+                    else if (camAngle == 60)
+                    {
+                        g2.CopyFromScreen(p2, Point.Empty, size2);
+                        bitmap2.Save(image_left_path, ImageFormat.Jpeg);
+                    }
                 }
                 imageInterval += 1;
-
             }
+            
             catch
             {
                 //It doesn't matters if previously safe fails.
@@ -145,7 +153,7 @@ public class ScriptTutorial : Script
 
             try
             {
-                json = File.ReadAllText(path);
+                json = File.ReadAllText(json_path);
                 dynamic jsonObj = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
 
                 jsonObj["car"]["speed"] = speed;
@@ -162,7 +170,7 @@ public class ScriptTutorial : Script
                 jsonObj["car"]["destinationZ"] = mapDestination.Z;
 
                 string output = Newtonsoft.Json.JsonConvert.SerializeObject(jsonObj, Newtonsoft.Json.Formatting.Indented);
-                File.WriteAllText(path, output);
+                File.WriteAllText(json_path, output);
             }
             catch
             {
