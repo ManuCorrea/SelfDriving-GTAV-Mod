@@ -4,13 +4,14 @@ using System.Windows.Forms;
 using GTA.Math;
 using System.IO;
 using GTA.Native;
-using System.Drawing;
-using System.Drawing.Imaging;
+using System.IO.Pipes;
+using System.Text;
 
 public class ScriptTutorial : Script
 {
+
     //Player info
-    Ped playerPed;
+    Ped playerPed = Game.Player.Character;
     Vehicle vehicle;
 
     //Camera
@@ -22,24 +23,8 @@ public class ScriptTutorial : Script
     public GTA.Math.Vector3 offset;
     public GTA.Math.Vector3 mapDestination;
     OutputArgument direction = new OutputArgument(), vehicleOut = new OutputArgument(), distance = new OutputArgument();
-    
+
     int camAngle = 0;
-    Rectangle bounds = new Rectangle(0, 0, 800, 480);
-    Bitmap bitmap;
-    Graphics g;
-
-    //Front Image variables
-    int width;
-    int height;
-    Size size;
-    Size size2;
-    Rectangle bounds2 = new Rectangle(0, 0, 600, 300);
-
-    //Left Image variables
-    Bitmap bitmap2;
-    Graphics g2;
-    int width2;
-    int height2;
 
     Boolean onRoad = false;
     float speed;
@@ -48,18 +33,19 @@ public class ScriptTutorial : Script
 
     //Interval
     byte imageInterval = 0;
-    readonly byte endInterval = 3;
+    readonly byte endInterval = 2;
 
-    //Top left point in the rectangle that take the screenshot
-    Point p1 = new Point(0, 150);
-    Point p2 = new Point(0, 250);
+
+    static string directory = Directory.GetCurrentDirectory();
+    static string combined = Path.Combine(directory, "scripts");
+    static string texto = Path.Combine(combined, Path.GetFileName("path.txt"));
 
     bool simulate_cameras = false;
-    string path;
-    string image_front_path;
-    string image_left_path;
+    string path = System.IO.File.ReadAllText(@texto);
     string json_path;
+    bool conection = false;
 
+    BinaryWriter bw;
 
     public ScriptTutorial()
     {
@@ -70,35 +56,16 @@ public class ScriptTutorial : Script
         cam = World.CreateCamera(new Vector3(1956.543f, 3699.894f, 35), Vector3.Zero, 60);
         cam.IsActive = true;
 
-        width = bounds.Width;
-        height = bounds.Height;
-
-        width2 = bounds2.Width;
-        height2 = bounds2.Height;
-        
-        size = bounds.Size;
-        size2 = bounds2.Size;
-        bitmap = new Bitmap(width, height);
-        bitmap2 = new Bitmap(width2, height2);
-        g = Graphics.FromImage(bitmap); //Screenshot front car
-        g2 = Graphics.FromImage(bitmap2); //Screenshot left car
-
-        string directory = Directory.GetCurrentDirectory();
-        string combined = Path.Combine(directory, "scripts");
-
-        string texto = Path.Combine(combined, Path.GetFileName("path.txt"));
-
-        path = System.IO.File.ReadAllText(@texto);
-        image_front_path = Path.Combine(path, Path.GetFileName("front.jpg"));
-        image_left_path = Path.Combine(path, Path.GetFileName("left.jpg"));
         json_path = Path.Combine(path, Path.GetFileName("data_file.json"));
 
     }
 
     void OnTick(object sender, EventArgs e)
     {
+
         if (simulate_cameras == true)
         {
+            imageInterval += 1;
             if (imageInterval == endInterval)
             {
                 if (camAngle == 60)
@@ -114,38 +81,46 @@ public class ScriptTutorial : Script
         }
         else
         {
-            imageInterval = 2;
+            imageInterval = 1;
         }
 
 
-        playerPed = Game.Player.Character;
-        
 
         if (playerPed.IsInVehicle())
         {
-            GetGameData();
+            vehicle = playerPed.CurrentVehicle;
             ManageGameCamera();
+            GetGameData();
 
             try
             {
-                //I know those if statements looks inefficient, if I make them "properly" it goes fast enough to capture the camAngle they aren't suppose
-                //to capture(at least in my PC). Just try changging the accepted imageInterval to see what is the best for you.
-                if (!(imageInterval == 0 || imageInterval == 1 || imageInterval == endInterval))
+                if (conection == true)
                 {
-                    if (camAngle == 0)
+                    //I know those if statements looks inefficient, if I make them "properly" it goes fast enough to capture the camAngle they aren't suppose
+                    //to capture(at least in my PC). Just try changging the accepted imageInterval to see what is the best for you.
+                    if (!(imageInterval == 0))
                     {
-                        g.CopyFromScreen(p1, Point.Empty, size);
-                        bitmap.Save(image_front_path, ImageFormat.Jpeg);
+                        if (camAngle == 0)
+                        {
+                            var buf = Encoding.ASCII.GetBytes("front");
+                            bw.Write((uint)buf.Length);                // Write string length
+                            bw.Write(buf);                              // Write string
+                        }
+                        else if (camAngle == 60)
+                        {
+                            var buf = Encoding.ASCII.GetBytes("left");
+                            bw.Write((uint)buf.Length);                // Write string length
+                            bw.Write(buf);                              // Write string
+                        }
+
                     }
-                    else if (camAngle == 60)
+                    else
                     {
-                        g2.CopyFromScreen(p2, Point.Empty, size2);
-                        bitmap2.Save(image_left_path, ImageFormat.Jpeg);
+                        var buf = Encoding.ASCII.GetBytes("invalid");
                     }
                 }
-                imageInterval += 1;
             }
-            
+
             catch
             {
                 //It doesn't matters if previously safe fails.
@@ -174,21 +149,22 @@ public class ScriptTutorial : Script
             }
             catch
             {
-            }          
+            }
 
         }
         else
         {
             OnFootCamera();
-                                              
+
             json = File.ReadAllText(path);
             dynamic jsonObj = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
 
-            jsonObj["car"]["incar"] = false;  
+            jsonObj["car"]["incar"] = false;
 
             string output = Newtonsoft.Json.JsonConvert.SerializeObject(jsonObj, Newtonsoft.Json.Formatting.Indented);
             File.WriteAllText(path, output);
-            }
+        }
+
     }
 
     public void MountCameraOnVehicle()
@@ -211,7 +187,8 @@ public class ScriptTutorial : Script
         }
         if (e.KeyCode == Keys.X)
         {
-            if (simulate_cameras == true){
+            if (simulate_cameras == true)
+            {
                 simulate_cameras = false;
                 camAngle = 0;
             }
@@ -219,6 +196,15 @@ public class ScriptTutorial : Script
             {
                 simulate_cameras = true;
             }
+        }
+
+        if (e.KeyCode == Keys.C)
+        {
+            var server = new NamedPipeServerStream("GTAV");
+            server.WaitForConnection();
+
+            bw = new BinaryWriter(server);
+            conection = true;
         }
     }
 
@@ -236,7 +222,6 @@ public class ScriptTutorial : Script
 
     void GetGameData()
     {
-        vehicle = playerPed.CurrentVehicle;
         //GPS & Coords
         mapDestination = World.GetWaypointPosition(); //https://github.com/Ric4o/GTAV-EnhancedNativeTrainer/blob/master/EnhancedNativeTrainer/src/features/teleportation.cpp
         mapDestination.Z = World.GetGroundHeight(mapDestination);
